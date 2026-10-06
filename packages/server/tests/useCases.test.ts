@@ -39,11 +39,11 @@ describe('use cases', () => {
             });
         });
 
-        it('leaves the previous game when joining another one', async () => {
+        it('leaves the previous game when joining another one, which closes when empty', async () => {
             const a = await f.createGame.execute('u1', 'dot', 'a');
             const b = await f.createGame.execute('u2', 'dot', 'b');
             await f.joinGame.execute('u1', b.id);
-            expect(f.gameProcessManager.playerIds(a.id)).toEqual([]);
+            expect(f.gameProcessManager.get(a.id)).toBeUndefined();
             expect(f.gameProcessManager.playerIds(b.id)).toEqual(['u2', 'u1']);
             expect(f.clientNotifier.to('u1')).toContainEqual({
                 type: 'game.left',
@@ -58,6 +58,24 @@ describe('use cases', () => {
             });
             const game = await f.createGame.execute('u1', 'dot', 'a');
             await expect(f.joinGame.execute('u1', game.id)).rejects.toBeInstanceOf(DomainError);
+        });
+
+        it('refuses to create a game beyond maxGames', async () => {
+            await f.createGame.execute('u1', 'dot', 'a');
+            await f.createGame.execute('u2', 'dot', 'b');
+            await f.loginUser.execute('u3', 'carol');
+            await expect(f.createGame.execute('u3', 'dot', 'c')).rejects.toMatchObject({
+                code: 'INVALID',
+                message: expect.stringContaining('already hosts 2 games'),
+            });
+            expect(f.gameProcessManager.count()).toBe(2);
+        });
+
+        it('lets a creator replace its own game without counting it twice', async () => {
+            await f.createGame.execute('u1', 'dot', 'a');
+            await f.createGame.execute('u1', 'dot', 'b');
+            await f.createGame.execute('u1', 'dot', 'c');
+            expect(f.gameProcessManager.list().map((g) => g.name)).toEqual(['c']);
         });
 
         it('sends a leaving player back to the lobby', async () => {

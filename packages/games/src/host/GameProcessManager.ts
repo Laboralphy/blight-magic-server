@@ -11,7 +11,8 @@ export interface GameProcessManagerOptions {
 
 /**
  * Creates, tracks and destroys the game child processes.
- * A player is in at most one game at a time.
+ * A player is in at most one game at a time, and a game closes when its last player leaves.
+ * Only running games are visible : a game still starting or already closing cannot be listed or joined.
  */
 export class GameProcessManager {
     private readonly games = new Map<string, GameProcess>();
@@ -54,11 +55,18 @@ export class GameProcessManager {
     }
 
     list(): GameSummary[] {
-        return [...this.games.values()].map((game) => game.summary());
+        return this.runningGames().map((game) => game.summary());
+    }
+
+    /**
+     * Every game process that exists, including those starting or closing
+     */
+    count(): number {
+        return this.games.size;
     }
 
     get(gameId: string): GameSummary | undefined {
-        return this.games.get(gameId)?.summary();
+        return this.running(gameId)?.summary();
     }
 
     pidOf(gameId: string): number | undefined {
@@ -79,13 +87,26 @@ export class GameProcessManager {
     }
 
     addPlayer(gameId: string, userId: string, name: string): GameSummary {
-        const game = this.require(gameId);
+        const game = this.running(gameId);
+        if (!game) {
+            throw new Error(`game ${gameId} is not running`);
+        }
         game.addPlayer(userId, name);
         return game.summary();
     }
 
+    /**
+     * Remove a player ; the game shuts down if it was the last one
+     */
     removePlayer(gameId: string, userId: string): void {
-        this.games.get(gameId)?.removePlayer(userId);
+        const game = this.games.get(gameId);
+        if (!game) {
+            return;
+        }
+        game.removePlayer(userId);
+        if (game.running && game.playerCount === 0) {
+            void game.shutdown();
+        }
     }
 
     sendInput(gameId: string, userId: string, seq: number, dir: Direction): void {
@@ -104,11 +125,12 @@ export class GameProcessManager {
         await Promise.all([...this.games.values()].map((game) => game.shutdown()));
     }
 
-    private require(gameId: string): GameProcess {
+    private running(gameId: string): GameProcess | undefined {
         const game = this.games.get(gameId);
-        if (!game) {
-            throw new Error(`game ${gameId} does not exist`);
-        }
-        return game;
+        return game?.running ? game : undefined;
+    }
+
+    private runningGames(): GameProcess[] {
+        return [...this.games.values()].filter((game) => game.running);
     }
 }

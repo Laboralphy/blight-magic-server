@@ -17,6 +17,11 @@ export type WebSocketGatewayDeps = {
  * including clients playing in a game child process (gateway relay model).
  */
 export class WebSocketGateway {
+    /**
+     * Largest client message accepted ; beyond it, ws closes the connection with code 1009.
+     * The biggest legitimate message is a 500-character chat line.
+     */
+    private static readonly MAX_PAYLOAD = 64 * 1024;
     private readonly deps: WebSocketGatewayDeps;
     private server: WebSocketServer | undefined;
 
@@ -30,7 +35,11 @@ export class WebSocketGateway {
     }
 
     attach(httpServer: Server, path = '/ws'): void {
-        this.server = new WebSocketServer({ server: httpServer, path });
+        this.server = new WebSocketServer({
+            server: httpServer,
+            path,
+            maxPayload: WebSocketGateway.MAX_PAYLOAD,
+        });
         this.server.on('connection', (socket) => this.onConnection(socket));
     }
 

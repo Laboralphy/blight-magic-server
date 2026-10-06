@@ -90,4 +90,24 @@ describe('end to end', () => {
         const list = await bob.expect('system.info', (m) => m.text.startsWith('Games:'));
         expect(list.text).toContain(`[${gameId}] arena (dot) — 1 player(s)`);
     });
+
+    it('closes a game when its last player leaves', async () => {
+        const dave = await login('dave');
+        dave.say('/create dot lonely');
+        const { game } = await dave.expect('game.joined');
+        dave.say('/leave');
+        await dave.expect('game.left', (m) => m.gameId === game.id);
+        await expect
+            .poll(async () => (await fetch(`${base}/api/games`)).json())
+            .not.toContainEqual(expect.objectContaining({ id: game.id }));
+        dave.say(`/join ${game.id}`);
+        expect((await dave.expect('system.error')).text).toBe(`Game not found: ${game.id}`);
+    });
+
+    it('drops a connection that sends an oversized message', async () => {
+        const eve = await login('eve');
+        const closed = eve.closed();
+        eve.sendRaw('x'.repeat(65 * 1024));
+        expect(await closed).toBe(1009);
+    });
 });

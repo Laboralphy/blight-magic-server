@@ -21,6 +21,7 @@ export class Fixture {
     readonly clientNotifier = new FakeClientNotifier();
     readonly gameProcessManager = new FakeGameProcessManager();
     readonly clock = { now: () => 1000 };
+    readonly gameSettings = { maxGames: 2 };
     readonly errors: string[] = [];
     readonly logger: ILogger = {
         info: () => {},

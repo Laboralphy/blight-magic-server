@@ -25,6 +25,7 @@ import type { IClock } from '../application/ports/IClock';
 import type { IGameProcessManager } from '../application/ports/IGameProcessManager';
 import type { IIdGenerator } from '../application/ports/IIdGenerator';
 import type { ILogger } from '../application/ports/ILogger';
+import type { GameSettings } from '../application/settings/GameSettings';
 
 import { LoginUser } from '../application/use-cases/session/LoginUser';
 import { LogoutUser } from '../application/use-cases/session/LogoutUser';
@@ -65,6 +66,7 @@ import type { BootSettings } from './settings';
 export interface Cradle {
     // values
     webSettings: WebSettings;
+    gameSettings: GameSettings;
 
     // services
     logger: ILogger;
@@ -126,6 +128,7 @@ export function buildContainer(boot: BootSettings): AwilixContainer<Cradle> {
 
     const registrations: Registrations<Cradle> = {
         webSettings: asValue({ clientDist: boot.clientDist }),
+        gameSettings: asValue({ maxGames: boot.maxGames }),
 
         logger: singleton(ConsoleLogger),
         clock: singleton(SystemClock),

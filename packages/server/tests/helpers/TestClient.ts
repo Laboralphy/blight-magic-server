@@ -78,6 +78,17 @@ export class TestClient {
         });
     }
 
+    /**
+     * Resolves with the close code once the server has closed the connection
+     */
+    closed(): Promise<number> {
+        return new Promise((resolve) => this.socket.once('close', (code) => resolve(code)));
+    }
+
+    sendRaw(data: string): void {
+        this.socket.send(data);
+    }
+
     close(): void {
         this.socket.close();
     }

@@ -22,6 +22,8 @@ Open http://localhost:5173 in two browser tabs. Log in with two different names,
 
 Click the arena, then move with the arrow keys, ZQSD or WASD.
 
+A game closes when its last player leaves. At most `MAX_GAMES` games (default 16) run at once.
+
 Production-like run: `npm run build && npm start`. The server then also serves `packages/client/dist`
 on :3000.
 

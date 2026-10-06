@@ -2,7 +2,8 @@ import type { ChildToParent, Direction, GameSummary } from '@blight/protocol';
 import type { IGameProcessManager } from '../../src/application/ports/IGameProcessManager';
 
 /**
- * In-process stand-in for the real manager : no child process
+ * In-process stand-in for the real manager : no child process.
+ * Games are running as soon as created, and vanish when their last player leaves.
  */
 export class FakeGameProcessManager implements IGameProcessManager {
     readonly games = new Map<string, { summary: GameSummary; players: Set<string> }>();
@@ -17,6 +18,10 @@ export class FakeGameProcessManager implements IGameProcessManager {
 
     list(): GameSummary[] {
         return [...this.games.keys()].map((id) => this.get(id)!);
+    }
+
+    count(): number {
+        return this.games.size;
     }
 
     get(gameId: string): GameSummary | undefined {
@@ -42,7 +47,10 @@ export class FakeGameProcessManager implements IGameProcessManager {
     }
 
     removePlayer(gameId: string, userId: string): void {
-        this.games.get(gameId)?.players.delete(userId);
+        const game = this.games.get(gameId);
+        if (game?.players.delete(userId) && game.players.size === 0) {
+            this.games.delete(gameId);
+        }
     }
 
     sendInput(gameId: string, userId: string, seq: number, dir: Direction): void {

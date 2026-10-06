@@ -68,6 +68,31 @@ describe('GameProcessManager (forks real child processes)', () => {
         expect(manager.get(game.id)).toBeUndefined();
     });
 
+    it('hides a game until its process is ready', async () => {
+        const creating = manager.create('dot', 'slow');
+        expect(manager.count()).toBe(1);
+        expect(manager.list()).toEqual([]);
+        const game = await creating;
+        expect(manager.list().map((g) => g.id)).toEqual([game.id]);
+    });
+
+    it('shuts a game down when its last player leaves', async () => {
+        const game = await manager.create('dot', 'short-lived');
+        manager.addPlayer(game.id, 'u1', 'alice');
+        manager.addPlayer(game.id, 'u2', 'bob');
+        const exited = new Promise<{ gameId: string; code: number | null }>((resolve) =>
+            manager.onGameExit((gameId, _playerIds, code) => resolve({ gameId, code }))
+        );
+        manager.removePlayer(game.id, 'u1');
+        expect(manager.get(game.id)).toBeDefined();
+        manager.removePlayer(game.id, 'u2');
+        // closing : already invisible, even before the process is gone
+        expect(manager.get(game.id)).toBeUndefined();
+        expect(() => manager.addPlayer(game.id, 'u3', 'carol')).toThrow('not running');
+        expect(await exited).toEqual({ gameId: game.id, code: 0 });
+        expect(manager.count()).toBe(0);
+    });
+
     it('hosts several independent games in separate processes', async () => {
         const a = await manager.create('dot', 'a');
         const b = await manager.create('dot', 'b');

@@ -8,13 +8,18 @@ import type {
 } from '@blight/protocol';
 
 /**
+ * starting : forked, not ready yet · running : accepts players · closing : asked to shut down
+ */
+type GameProcessState = 'starting' | 'running' | 'closing' | 'exited';
+
+/**
  * Main-process handle on one game child process : lifecycle, membership and typed IPC
  */
 export class GameProcess {
     /** userId → display name */
     private readonly players = new Map<string, string>();
     private readonly readyPromise: Promise<void>;
-    private exited = false;
+    private state: GameProcessState = 'starting';
 
     constructor(
         private readonly args: GameProcessArgs,
@@ -22,7 +27,7 @@ export class GameProcess {
         readyTimeoutMs: number
     ) {
         this.child.once('exit', () => {
-            this.exited = true;
+            this.state = 'exited';
         });
         this.readyPromise = this.watchReady(readyTimeoutMs);
     }
@@ -36,7 +41,14 @@ export class GameProcess {
     }
 
     get alive(): boolean {
-        return !this.exited;
+        return this.state !== 'exited';
+    }
+
+    /**
+     * Ready and not shutting down : the only state in which the game is visible and joinable
+     */
+    get running(): boolean {
+        return this.state === 'running';
     }
 
     /**
@@ -69,6 +81,10 @@ export class GameProcess {
         return this.players.has(userId);
     }
 
+    get playerCount(): number {
+        return this.players.size;
+    }
+
     get playerIds(): string[] {
         return [...this.players.keys()];
     }
@@ -92,9 +108,10 @@ export class GameProcess {
      * Ask the child to stop, and kill it if it does not comply in time
      */
     async shutdown(timeoutMs = 2000): Promise<void> {
-        if (this.exited) {
+        if (this.state === 'exited') {
             return;
         }
+        this.state = 'closing';
         const exited = new Promise<void>((resolve) => this.child.once('exit', () => resolve()));
         this.send({ type: 'shutdown' });
         const timer = setTimeout(() => this.child.kill('SIGKILL'), timeoutMs);
@@ -107,7 +124,7 @@ export class GameProcess {
     }
 
     private send(message: ParentToChild): void {
-        if (!this.exited && this.child.connected) {
+        if (this.state !== 'exited' && this.child.connected) {
             this.child.send(message);
         }
     }
@@ -121,6 +138,9 @@ export class GameProcess {
             const onMessage = (message: ChildToParent) => {
                 if (message.type === 'ready') {
                     cleanup();
+                    if (this.state === 'starting') {
+                        this.state = 'running';
+                    }
                     resolve();
                 }
             };

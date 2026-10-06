@@ -2,11 +2,14 @@ import type { ChildToParent, Direction, GameSummary } from '@blight/protocol';
 
 /**
  * Manages game child processes. Implemented by @blight/games (GameProcessManager).
- * A player is in at most one game at a time.
+ * A player is in at most one game at a time, and a game closes when its last player leaves.
+ * Games that are starting or closing are invisible to list(), get() and addPlayer().
  */
 export interface IGameProcessManager {
     create(type: string, name: string): Promise<GameSummary>;
     list(): GameSummary[];
+    /** every game process, including those starting or closing */
+    count(): number;
     get(gameId: string): GameSummary | undefined;
     pidOf(gameId: string): number | undefined;
     findGameOfPlayer(userId: string): string | undefined;
