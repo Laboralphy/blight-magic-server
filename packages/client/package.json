@@ -1,0 +1,22 @@
+{
+    "name": "@blight/client",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+    },
+    "dependencies": {
+        "@blight/protocol": "*",
+        "pinia": "^4.0.3",
+        "vue": "^3.5.43"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^6.0.9",
+        "vite": "^8.3.2",
+        "vue-tsc": "^3.3.12"
+    }
+}

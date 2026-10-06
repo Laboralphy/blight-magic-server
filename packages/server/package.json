@@ -1,0 +1,28 @@
+{
+    "name": "@blight/server",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch --clear-screen=false src/main.ts",
+        "start": "tsx src/main.ts",
+        "typecheck": "tsc --noEmit -p tsconfig.json"
+    },
+    "dependencies": {
+        "@blight/games": "*",
+        "@blight/protocol": "*",
+        "@koa/router": "^15.7.0",
+        "@laboralphy/o876-txat": "^2.0.0",
+        "awilix": "^13.0.5",
+        "koa": "^3.2.1",
+        "koa-static": "^5.0.0",
+        "tsx": "^4.23.15",
+        "ws": "^8.22.0",
+        "zod": "^4.6.5"
+    },
+    "devDependencies": {
+        "@types/koa": "^3.0.3",
+        "@types/koa-static": "^4.0.4",
+        "@types/ws": "^8.18.2"
+    }
+}

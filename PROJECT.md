@@ -34,6 +34,11 @@ The clean architecture would help me having a central "use-cases" management sys
 
 I also think of having a monorepo with packages like in ../plasmud-server (you should analyze ths project) we should have packages like "server" "games" "chat" "client"
 
+There is a clean architexture project template at ../clean-architecture that can be used as a base template.
+The clean architecture can be either in its own package, or in server package.
+
+The clean archi part is used for persistance management, chat management, api...  
+
 
 ## front-end
 
@@ -51,8 +56,14 @@ the chat system comes with a minimalist command line interpreter (command starts
 - /create {type} {name} - create a new game : spawn a new child process, and connect the client in. The process is managed by a class in a package "games". The {type} is a small string that is not currently used, the name is a tag name
 - /list - gives a list of created games with their game_id, name, and type
 - /join {game_id} - join an existing game : the client connexion is redirected by the proper, eventually quit the previous game.
-- /leave - leave the current game
+- /leave - leave the current game. The client disconnects its self from the child process, and returns to the main process. 
 
-###
+### The game 
 
+An extemely simplistic "game" will be implemented as example :
+A multiplayer game based on websocket
+Each player as a position and a random color.
+Each Client sees a square : the game arena, and a dot : the player position.
+A client can move right, left, up or down. All connected client see change.
+A client should render game screen as a canvas (for now).
 
